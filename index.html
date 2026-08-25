@@ -13,16 +13,11 @@
     <script type="module">
       import * as THREE from "three/webgpu";
 
-      // サイズを指定
-      const width = 960;
-      const height = 540;
-
       // レンダラーを作成
       const renderer = new THREE.WebGPURenderer({
         canvas: document.querySelector("#myCanvas"),
       });
       renderer.setPixelRatio(devicePixelRatio);
-      renderer.setSize(width, height);
 
       renderer.setAnimationLoop(tick);
 
