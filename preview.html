@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+      }
+
+      #myCanvas {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        display: block;
+        transform-origin: center;
+      }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.182.0/build/three.webgpu.js",
+          "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.182.0/build/three.webgpu.js"
+        }
+      }
+    </script>
+    <script type="module">
+      import * as THREE from "three/webgpu";
+
+      // レンダラーを作成
+      const canvas = document.querySelector("#myCanvas");
+      const renderer = new THREE.WebGPURenderer({
+        canvas,
+      });
+      renderer.setPixelRatio(window.devicePixelRatio);
+
+      // シーンを作成
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x000000);
+
+      // カメラを作成
+      const camera = new THREE.PerspectiveCamera(45, 1);
+      camera.position.set(0, 0, +1000);
+
+      // canvasを常に横長で表示し、縦長の画面では90度回転させる
+      function resize() {
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const isPortrait = viewportHeight > viewportWidth;
+
+        // 縦長のときは描画上の幅と高さを交換する
+        const width = isPortrait ? viewportHeight : viewportWidth;
+        const height = isPortrait ? viewportWidth : viewportHeight;
+
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+        canvas.style.transform = isPortrait
+          ? "translate(-50%, -50%) rotate(90deg)"
+          : "translate(-50%, -50%)";
+
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+
+      window.addEventListener("resize", resize);
+      resize();
+
+      // 箱を作成
+      const geometry = new THREE.BoxGeometry(400, 400, 400);
+      const material = new THREE.MeshNormalMaterial();
+      const box = new THREE.Mesh(geometry, material);
+      scene.add(box);
+
+      // 毎フレーム時に実行されるループイベントです
+      function tick() {
+        box.rotation.y += 0.1;
+        renderer.render(scene, camera); // レンダリング
+      }
+
+      renderer.setAnimationLoop(tick);
+    </script>
+  </head>
+  <body>
+    <canvas id="myCanvas"></canvas>
+  </body>
+</html>
