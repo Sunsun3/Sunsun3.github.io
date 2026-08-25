@@ -2,7 +2,10 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
     <style>
       html,
       body {
@@ -10,14 +13,53 @@
         height: 100%;
         margin: 0;
         overflow: hidden;
+        background: #000;
+        overscroll-behavior: none;
+      }
+
+      #stage {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        width: 100dvw;
+        height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background: #000;
+        touch-action: none;
       }
 
       #myCanvas {
-        position: fixed;
-        top: 50%;
-        left: 50%;
         display: block;
+        flex: 0 0 auto;
+        background: #000;
         transform-origin: center;
+      }
+
+      #stage.is-portrait #myCanvas {
+        transform: rotate(90deg);
+      }
+
+      #errorMessage {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 24px;
+        color: #fff;
+        background: #000;
+        font-family: sans-serif;
+        text-align: center;
+      }
+
+      #errorMessage[hidden] {
+        display: none;
       }
     </style>
     <script type="importmap">
@@ -32,11 +74,22 @@
       import * as THREE from "three/webgpu";
 
       // レンダラーを作成
+      const stage = document.querySelector("#stage");
       const canvas = document.querySelector("#myCanvas");
+      const errorMessage = document.querySelector("#errorMessage");
+
+      // iOS版ブラウザでは互換性を優先してWebGL 2を使用する
+      const isIOS =
+        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
       const renderer = new THREE.WebGPURenderer({
         canvas,
+        alpha: false,
+        antialias: true,
+        forceWebGL: isIOS,
       });
-      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 
       // シーンを作成
       const scene = new THREE.Scene();
@@ -48,27 +101,30 @@
 
       // canvasを常に横長で表示し、縦長の画面では90度回転させる
       function resize() {
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
+        // CSSの動的ビューポートを反映したステージの実寸を使用する
+        const viewportWidth = Math.max(1, stage.clientWidth);
+        const viewportHeight = Math.max(1, stage.clientHeight);
         const isPortrait = viewportHeight > viewportWidth;
 
         // 縦長のときは描画上の幅と高さを交換する
         const width = isPortrait ? viewportHeight : viewportWidth;
         const height = isPortrait ? viewportWidth : viewportHeight;
 
+        stage.classList.toggle("is-portrait", isPortrait);
         canvas.style.width = `${width}px`;
         canvas.style.height = `${height}px`;
-        canvas.style.transform = isPortrait
-          ? "translate(-50%, -50%) rotate(90deg)"
-          : "translate(-50%, -50%)";
 
         renderer.setSize(width, height, false);
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
       }
 
-      window.addEventListener("resize", resize);
-      resize();
+      let resizeFrameId = 0;
+
+      function scheduleResize() {
+        cancelAnimationFrame(resizeFrameId);
+        resizeFrameId = requestAnimationFrame(resize);
+      }
 
       // 箱を作成
       const geometry = new THREE.BoxGeometry(400, 400, 400);
@@ -82,10 +138,44 @@
         renderer.render(scene, camera); // レンダリング
       }
 
-      renderer.setAnimationLoop(tick);
+      async function start() {
+        try {
+          // iOSでは初回レイアウト確定後に初期化すると白画面になりにくい
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+          resize();
+          await renderer.init();
+          resize();
+          renderer.render(scene, camera);
+          renderer.setAnimationLoop(tick);
+
+          const resizeObserver = new ResizeObserver(scheduleResize);
+          resizeObserver.observe(stage);
+
+          window.addEventListener("resize", scheduleResize, { passive: true });
+          window.addEventListener("pageshow", scheduleResize, { passive: true });
+          window.visualViewport?.addEventListener("resize", scheduleResize, {
+            passive: true,
+          });
+          screen.orientation?.addEventListener("change", scheduleResize);
+
+          // モバイルブラウザのツールバー寸法が確定した後にも再調整する
+          scheduleResize();
+          setTimeout(scheduleResize, 250);
+        } catch (error) {
+          console.error(error);
+          errorMessage.textContent =
+            "3D表示を開始できませんでした。OSとブラウザを最新版にして再読み込みしてください。";
+          errorMessage.hidden = false;
+        }
+      }
+
+      start();
     </script>
   </head>
   <body>
-    <canvas id="myCanvas"></canvas>
+    <main id="stage">
+      <canvas id="myCanvas"></canvas>
+      <p id="errorMessage" hidden></p>
+    </main>
   </body>
-</html>
+</html>
