@@ -1,11 +1,11 @@
 const formats = {
   source: {
-    tree: ['Assets/Portraits/README.txt', 'Characters/CharacterDraft.cs', 'CharacterStarter.csproj', 'CharacterStarter.json', 'ModEntry.cs', 'README.md'],
+    tree: ['Assets/Portraits/README.txt', 'Characters/CharacterDraft.cs', 'CharacterStarter.csproj', 'CharacterStarter.json', 'character.json', 'ModEntry.cs', 'README.md'],
     note: 'ソースコード、素材フォルダー、ビルド手順を収録。'
   },
   built: {
-    tree: ['CharacterStarter.dll', 'CharacterStarter.json', 'README.txt'],
-    note: 'DLL、Modの設定ファイル、導入手順を収録。'
+    tree: ['CharacterStarter.dll', 'CharacterStarter.json', 'character.json', 'README.txt'],
+    note: 'キャラクター本体と、BaseLib・BaseLibCompatibilityHelperのフォルダーを同梱。展開してmodsに配置します。'
   }
 };
 const download = document.querySelector('#download');
@@ -19,7 +19,47 @@ function updatePreview() {
   statusLine.textContent = '';
 }
 document.querySelector('fieldset').addEventListener('change', updatePreview);
-download.addEventListener('click', () => {statusLine.textContent = 'ZIPのダウンロードを開始しました。';});
+download.addEventListener('click', async (event) => {
+  event.preventDefault();
+  const input = document.querySelector('#character-name');
+  const name = input.value.trim();
+  if (!name || name.length > 40) {
+    input.setCustomValidity('キャラクター名を1〜40文字で入力してください。');
+    input.reportValidity();
+    return;
+  }
+  input.setCustomValidity('');
+  if (download.getAttribute('aria-busy') === 'true') return;
+  download.setAttribute('aria-busy', 'true');
+  statusLine.textContent = 'ZIPを生成しています…';
+  try {
+    const response = await fetch(download.href);
+    if (!response.ok) throw new Error('テンプレートの取得に失敗しました。');
+    const zip = await JSZip.loadAsync(await response.arrayBuffer());
+    zip.file('CharacterStarter/character.json', JSON.stringify({name}, null, 2));
+    const manifestPath = 'CharacterStarter/CharacterStarter.json';
+    const manifest = JSON.parse(await zip.file(manifestPath).async('string'));
+    manifest.name = name;
+    zip.file(manifestPath, JSON.stringify(manifest, null, 2));
+    const blob = await zip.generateAsync({type: 'blob', compression: 'DEFLATE'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'CharacterStarter.zip';
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    statusLine.textContent = '生成しました。ZIP内のREADMEの手順で配置してください。';
+  } catch (error) {
+    statusLine.textContent = '生成できませんでした。' + error.message;
+  } finally {
+    download.removeAttribute('aria-busy');
+  }
+});
+document.querySelector('#character-name').addEventListener('input', (event) => {
+  event.target.setCustomValidity('');
+});
 updatePreview();
 
 // Engraved tower and orbital rings, drawn in the header's native palette.

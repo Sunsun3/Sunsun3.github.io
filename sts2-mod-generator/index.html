@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#171b20"><title>STS2 キャラクターModジェネレーター</title>
-<link rel="stylesheet" href="./style.css"><script src="./app.js" defer></script>
+<link rel="stylesheet" href="./style.css"><script src="./jszip.min.js" defer></script><script src="./app.js" defer></script>
 </head>
 <body>
 <header><div class="brand"><i aria-hidden="true">♢</i> Spire Workshop</div><span>SLAY THE SPIRE 2</span></header>
@@ -11,13 +11,13 @@
 <section class="hero"><div><p class="kicker">CHARACTER MOD TOOLKIT</p>
 <h1>キャラクターMod<br><em>ジェネレーター</em></h1>
 <p>Slay the Spire 2 のキャラクターMod開発に使える<br class="wide">初期テンプレートを、ZIPでダウンロード。</p></div><canvas id="art" width="640" height="400" aria-hidden="true"></canvas></section>
-<div class="workspace"><section class="settings"><h2>テンプレート形式</h2>
+<div class="workspace"><section class="settings"><h2>キャラクターを作成</h2><label for="character-name">キャラクター名</label><input id="character-name" type="text" maxlength="40" value="塔の旅人" required><p>アイアンクラッドの見た目・カードを使うキャラクターを追加します。</p><h2>テンプレート形式</h2>
 <fieldset><legend class="sr">ダウンロードする形式</legend>
 <label><input type="radio" name="mode" value="source" checked><span class="icon" aria-hidden="true">{ }</span><span><strong>C# プロジェクト</strong><small>ソースコードから開発を始める</small></span></label>
 <label><input type="radio" name="mode" value="built"><span class="icon" aria-hidden="true">⬡</span><span><strong>ビルド済み</strong><small>コンパイル済みのDLLを導入する</small></span></label></fieldset>
 <a id="download" download href="./downloads/CharacterStarter-source.zip">Mod生成・ダウンロード <span aria-hidden="true">↓</span></a>
 <p id="status" role="status"></p></section>
 <section class="preview"><div class="previewTitle"><h2>フォルダー構成</h2><span>ZIP PREVIEW</span></div><div class="tree"><strong>▱ CharacterStarter/</strong><pre id="tree"></pre></div><p id="help"></p></section></div>
-<details><summary>テンプレートの使い方</summary><p>C#版は展開後、.NET 9 SDK とゲーム本体を用意し、README.md の手順でビルドしてください。ビルド済み版は展開した CharacterStarter フォルダーをゲームの mods フォルダーに配置します。</p><p>どちらも初期化ログを出力する開発用の土台です。プレイ可能なキャラクターを追加するには、C#版にキャラクターの登録処理と素材を追加してください。</p></details>
+<details><summary>テンプレートの使い方</summary><p>C#版は展開後、.NET 9 SDK とゲーム本体を用意し、README.md の手順でビルドしてください。ビルド済み版は展開した CharacterStarter フォルダーをゲームの mods フォルダーに配置します。</p><p>ビルド済み版の CharacterStarter、BaseLib、BaseLibCompatibilityHelper を mods フォルダーに配置してください。ゲームでModを有効にすると、入力した名前のキャラクターが追加されます。生成したキャラクターは同時に1体を使用できます。</p></details>
 </main><footer>Spire Workshop <span>STS2 v0.113.1 用テンプレート</span></footer>
 </body></html>
