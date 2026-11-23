@@ -1,64 +1,72 @@
 const formats = {
   source: {
-    tree: ['Assets/Portraits/README.txt', 'Characters/CharacterDraft.cs', 'CharacterStarter.csproj', 'CharacterStarter.json', 'character.json', 'ModEntry.cs', 'README.md'],
-    note: 'ソースコード、素材フォルダー、ビルド手順を収録。'
+    tree: ['Assets/Portraits/README.txt', 'Characters/CharacterDraft.cs', '{id}.csproj', '{id}.json', 'character.json', 'ModEntry.cs', 'README.md', 'GENERATION.md'],
+    note: '名前に合わせたMod ID、C# プロジェクト、ビルド手順を生成します。'
   },
   built: {
-    tree: ['CharacterStarter.dll', 'CharacterStarter.json', 'character.json', 'README.txt'],
-    note: 'キャラクター本体と、BaseLib・BaseLibCompatibilityHelperのフォルダーを同梱。展開してmodsに配置します。'
+    tree: ['CharacterStarter.dll', 'CharacterStarter.json', 'character.json', 'README.txt', 'GENERATION.md'],
+    note: '共通DLLが入力名を設定ファイルから読み込みます。BaseLib・BaseLibCompatibilityHelperも同梱。'
   }
 };
 const download = document.querySelector('#download');
 const statusLine = document.querySelector('#status');
+const nameInput = document.querySelector('#character-name');
+const templateUrls = {
+  source: './downloads/CharacterStarter-source.zip',
+  built: './downloads/CharacterStarter-built.zip'
+};
 function updatePreview() {
   const mode = document.querySelector('input[name=mode]:checked').value;
   const {tree, note} = formats[mode];
-  document.querySelector('#tree').textContent = tree.map((name, i) => (i === tree.length - 1 ? '└─ ' : '├─ ') + name).join('\n');
+  let id = 'CharacterStarter';
+  if (mode === 'source' && nameInput.value.trim()) {
+    id = Sts2Generator.projectIdFor(nameInput.value.trim());
+  }
+  document.querySelector('#project-root').textContent = `▱ ${id}/`;
+  document.querySelector('#tree').textContent = tree.map((path, i) =>
+    (i === tree.length - 1 ? '└─ ' : '├─ ') + path.replace('{id}', id)).join('\n');
   document.querySelector('#help').textContent = note;
-  download.href = './downloads/CharacterStarter-' + mode + '.zip';
   statusLine.textContent = '';
 }
 document.querySelector('fieldset').addEventListener('change', updatePreview);
-download.addEventListener('click', async (event) => {
-  event.preventDefault();
-  const input = document.querySelector('#character-name');
-  const name = input.value.trim();
-  if (!name || name.length > 40) {
-    input.setCustomValidity('キャラクター名を1〜40文字で入力してください。');
-    input.reportValidity();
+download.addEventListener('click', async () => {
+  let name;
+  try {
+    name = Sts2Generator.validateName(nameInput.value);
+  } catch (error) {
+    nameInput.setCustomValidity(error.message);
+    nameInput.reportValidity();
     return;
   }
-  input.setCustomValidity('');
+  nameInput.setCustomValidity('');
   if (download.getAttribute('aria-busy') === 'true') return;
+  const mode = document.querySelector('input[name=mode]:checked').value;
   download.setAttribute('aria-busy', 'true');
   statusLine.textContent = 'ZIPを生成しています…';
   try {
-    const response = await fetch(download.href);
+    const response = await fetch(templateUrls[mode]);
     if (!response.ok) throw new Error('テンプレートの取得に失敗しました。');
     const zip = await JSZip.loadAsync(await response.arrayBuffer());
-    zip.file('CharacterStarter/character.json', JSON.stringify({name}, null, 2));
-    const manifestPath = 'CharacterStarter/CharacterStarter.json';
-    const manifest = JSON.parse(await zip.file(manifestPath).async('string'));
-    manifest.name = name;
-    zip.file(manifestPath, JSON.stringify(manifest, null, 2));
+    const result = await Sts2Generator.personalizeArchive(zip, name, mode);
     const blob = await zip.generateAsync({type: 'blob', compression: 'DEFLATE'});
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'CharacterStarter.zip';
+    link.download = result.fileName;
     document.body.append(link);
     link.click();
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 60000);
-    statusLine.textContent = '生成しました。ZIP内のREADMEの手順で配置してください。';
+    statusLine.textContent = `生成しました。${result.projectId}/GENERATION.md に生成内容を記録しました。`;
   } catch (error) {
     statusLine.textContent = '生成できませんでした。' + error.message;
   } finally {
     download.removeAttribute('aria-busy');
   }
 });
-document.querySelector('#character-name').addEventListener('input', (event) => {
+nameInput.addEventListener('input', (event) => {
   event.target.setCustomValidity('');
+  updatePreview();
 });
 updatePreview();
 
