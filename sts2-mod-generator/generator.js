@@ -29,15 +29,34 @@
     return `Character_${slug}_${nameHash(name)}`;
   }
 
-  async function personalizeArchive(zip, rawName, mode) {
+  function validateAttack(raw) {
+    const parse = (value, label, min, max) => {
+      if (value == null || typeof value === 'boolean' || (typeof value === 'string' && value.trim() === '')) {
+        throw new Error(`${label}を${min}〜${max}の整数で入力してください。`);
+      }
+      const number = Number(value);
+      if (!Number.isInteger(number) || number < min || number > max) {
+        throw new Error(`${label}を${min}〜${max}の整数で入力してください。`);
+      }
+      return number;
+    };
+    return {
+      cost: parse(raw?.cost, 'コスト', 0, 9),
+      damage: parse(raw?.damage, 'ダメージ', 1, 999)
+    };
+  }
+
+  async function personalizeArchive(zip, rawName, mode, rawAttack = {cost: 1, damage: 6}) {
     const name = validateName(rawName);
+    const attack = validateAttack(rawAttack);
     if (mode !== 'source' && mode !== 'built') throw new Error('テンプレート形式が不正です。');
     const projectId = mode === 'source' ? projectIdFor(name) : templateId;
     const originalRoot = `${templateId}/`;
     const targetRoot = `${projectId}/`;
     const sourceFiles = Object.keys(zip.files).filter(path => path.startsWith(originalRoot) && !zip.files[path].dir);
-    const required = [`${originalRoot}character.json`, `${originalRoot}${templateId}.json`];
-    if (required.some(path => !zip.file(path)) || (mode === 'source' && !zip.file(`${originalRoot}${templateId}.csproj`))) {
+    const required = [`${originalRoot}character.json`, `${originalRoot}${templateId}.json`, `${originalRoot}attack-card.json`];
+    if (required.some(path => !zip.file(path)) ||
+      (mode === 'source' && !zip.file(`${originalRoot}Cards/AttackDraft.cs`))) {
       throw new Error('テンプレートに必要なファイルがありません。');
     }
 
@@ -56,6 +75,7 @@
     }
 
     zip.file(`${targetRoot}character.json`, JSON.stringify({name}, null, 2) + '\n');
+    zip.file(`${targetRoot}attack-card.json`, JSON.stringify(attack, null, 2) + '\n');
     const manifestPath = `${targetRoot}${projectId}.json`;
     const manifestFile = zip.file(manifestPath);
     if (!manifestFile) throw new Error('Mod設定ファイルがありません。');
@@ -70,19 +90,24 @@
       `- 形式: ${mode === 'source' ? 'C# プロジェクト' : 'ビルド済み'}`,
       `- Mod ID: ${projectId}`,
       `- フォルダー: ${projectId}/`,
+      '- アタックカード: 追加アタック',
+      `- コスト: ${attack.cost}`,
+      `- ダメージ: ${attack.damage}`,
       '',
       mode === 'source'
         ? 'このプロジェクトは入力名から生成されています。README.md の手順でビルドしてください。'
-        : '同梱 DLL は共通のビルド済みファイルです。キャラクター名は character.json から読み込まれます。',
+        : '同梱 DLL は共通のビルド済みファイルです。名前は character.json、カード値は attack-card.json から読み込まれます。',
       ''
     ].join('\n');
     zip.file(`${targetRoot}GENERATION.md`, record);
     return {
       projectId,
-      fileName: mode === 'source' ? `${projectId}-source.zip` : `${projectId}-built-${nameHash(name)}.zip`,
+      fileName: mode === 'source'
+        ? `${projectId}-c${attack.cost}-d${attack.damage}-source.zip`
+        : `${projectId}-built-${nameHash(name)}-c${attack.cost}-d${attack.damage}.zip`,
       record
     };
   }
 
-  return {validateName, projectIdFor, personalizeArchive};
+  return {validateName, validateAttack, projectIdFor, personalizeArchive};
 });

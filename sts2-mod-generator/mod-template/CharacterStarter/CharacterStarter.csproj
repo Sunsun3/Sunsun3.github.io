@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GameDataDir Condition="'$(GameDataDir)' == ''">$(MSBuildProgramFiles32)/Steam/steamapps/common/Slay the Spire 2/data_sts2_windows_x86_64</GameDataDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="BaseLib" HintPath="lib/BaseLib.dll" Private="false" />
+    <Reference Include="GodotSharp" HintPath="$(GameDataDir)/GodotSharp.dll" Private="false" />
+    <Reference Include="sts2" HintPath="$(GameDataDir)/sts2.dll" Private="false" />
+    <None Update="CharacterStarter.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="attack-card.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

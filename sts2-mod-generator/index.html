@@ -11,13 +11,13 @@
 <section class="hero"><div><p class="kicker">CHARACTER MOD TOOLKIT</p>
 <h1>キャラクターMod<br><em>ジェネレーター</em></h1>
 <p>名前を入力してキャラクターModを生成。<br class="wide">C# プロジェクトか導入用 ZIP をダウンロードできます。</p></div><canvas id="art" width="640" height="400" aria-hidden="true"></canvas></section>
-<div class="workspace"><section class="settings"><h2>キャラクターを作成</h2><label for="character-name">キャラクター名</label><input id="character-name" type="text" maxlength="40" value="塔の旅人" required><p>アイアンクラッドの見た目・カードを使うキャラクターを追加します。</p><h2>テンプレート形式</h2>
+<div class="workspace"><section class="settings"><h2>キャラクターを作成</h2><label for="character-name">キャラクター名</label><input id="character-name" type="text" maxlength="40" value="塔の旅人" required><p>アイアンクラッドの見た目と基本カードを使うキャラクターを追加します。</p><h2>アタックカード</h2><p>初期デッキに「追加アタック」を1枚追加します。</p><div class="number-fields"><div><label for="attack-cost">コスト</label><input id="attack-cost" type="number" min="0" max="9" step="1" value="1" required></div><div><label for="attack-damage">ダメージ</label><input id="attack-damage" type="number" min="1" max="999" step="1" value="6" required></div></div><h2>テンプレート形式</h2>
 <fieldset><legend class="sr">ダウンロードする形式</legend>
 <label><input type="radio" name="mode" value="source" checked><span class="icon" aria-hidden="true">{ }</span><span><strong>C# プロジェクト</strong><small>ソースコードから開発を始める</small></span></label>
 <label><input type="radio" name="mode" value="built"><span class="icon" aria-hidden="true">⬡</span><span><strong>ビルド済み</strong><small>コンパイル済みのDLLを導入する</small></span></label></fieldset>
 <button id="download" type="button">Mod生成・ダウンロード</button>
 <p id="status" role="status"></p></section>
 <section class="preview"><div class="previewTitle"><h2>フォルダー構成</h2><span>ZIP PREVIEW</span></div><div class="tree"><strong id="project-root"></strong><pre id="tree"></pre></div><p id="help"></p></section></div>
-<details><summary>生成したModの使い方</summary><p>C#版は展開後、.NET 9 SDK とゲーム本体を用意し、同梱の README.md の手順でビルドしてください。生成したプロジェクト ID がフォルダー名、設定ファイル名、C# 名前空間に反映されます。</p><p>ビルド済み版は展開した CharacterStarter、BaseLib、BaseLibCompatibilityHelper の3フォルダーをゲームの mods フォルダーに配置してください。DLLは共通で、入力した名前は character.json から読み込まれます。生成したキャラクターは同時に1体を使用できます。</p></details>
+<details><summary>生成したModの使い方</summary><p>C#版は展開後、.NET 9 SDK とゲーム本体を用意し、同梱の README.md の手順でビルドしてください。生成したプロジェクト ID がフォルダー名、設定ファイル名、C# 名前空間に反映されます。</p><p>ビルド済み版は展開した CharacterStarter、BaseLib、BaseLibCompatibilityHelper の3フォルダーをゲームの mods フォルダーに配置してください。DLLは共通で、キャラクター名は character.json、カードのコスト・ダメージは attack-card.json から読み込まれます。生成したキャラクターは同時に1体を使用できます。</p></details>
 </main><footer>Spire Workshop <span>STS2 v0.113.1 用テンプレート</span></footer>
 </body></html>

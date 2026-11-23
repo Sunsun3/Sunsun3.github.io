@@ -1,0 +1,16 @@
+{
+  "id": "CharacterStarter",
+  "name": "Character Starter",
+  "author": "Mod Creator",
+  "description": "キャラクターMod開発用の初期テンプレート",
+  "version": "0.1.0",
+  "has_dll": true,
+  "has_pck": false,
+  "dependencies": [
+    {
+      "id": "BaseLib",
+      "min_version": "3.4.8"
+    }
+  ],
+  "affects_gameplay": true
+}

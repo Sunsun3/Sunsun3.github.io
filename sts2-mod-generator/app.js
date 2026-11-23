@@ -1,16 +1,18 @@
 const formats = {
   source: {
-    tree: ['Assets/Portraits/README.txt', 'Characters/CharacterDraft.cs', '{id}.csproj', '{id}.json', 'character.json', 'ModEntry.cs', 'README.md', 'GENERATION.md'],
+    tree: ['Assets/Portraits/README.txt', 'Cards/AttackDraft.cs', 'Cards/AttackSettings.cs', 'Characters/CharacterDraft.cs', '{id}.csproj', '{id}.json', 'character.json', 'attack-card.json', 'ModEntry.cs', 'README.md', 'GENERATION.md'],
     note: '名前に合わせたMod ID、C# プロジェクト、ビルド手順を生成します。'
   },
   built: {
-    tree: ['CharacterStarter.dll', 'CharacterStarter.json', 'character.json', 'README.txt', 'GENERATION.md'],
+    tree: ['CharacterStarter.dll', 'CharacterStarter.json', 'character.json', 'attack-card.json', 'README.txt', 'GENERATION.md'],
     note: '共通DLLが入力名を設定ファイルから読み込みます。BaseLib・BaseLibCompatibilityHelperも同梱。'
   }
 };
 const download = document.querySelector('#download');
 const statusLine = document.querySelector('#status');
 const nameInput = document.querySelector('#character-name');
+const costInput = document.querySelector('#attack-cost');
+const damageInput = document.querySelector('#attack-damage');
 const templateUrls = {
   source: './downloads/CharacterStarter-source.zip',
   built: './downloads/CharacterStarter-built.zip'
@@ -25,20 +27,26 @@ function updatePreview() {
   document.querySelector('#project-root').textContent = `▱ ${id}/`;
   document.querySelector('#tree').textContent = tree.map((path, i) =>
     (i === tree.length - 1 ? '└─ ' : '├─ ') + path.replace('{id}', id)).join('\n');
-  document.querySelector('#help').textContent = note;
+  document.querySelector('#help').textContent = `${note} 追加アタック: コスト ${costInput.value || '—'} / ダメージ ${damageInput.value || '—'}`;
   statusLine.textContent = '';
 }
 document.querySelector('fieldset').addEventListener('change', updatePreview);
 download.addEventListener('click', async () => {
   let name;
+  let attack;
   try {
     name = Sts2Generator.validateName(nameInput.value);
+    attack = Sts2Generator.validateAttack({cost: costInput.value, damage: damageInput.value});
   } catch (error) {
-    nameInput.setCustomValidity(error.message);
-    nameInput.reportValidity();
+    const field = error.message.startsWith('コスト') ? costInput :
+      error.message.startsWith('ダメージ') ? damageInput : nameInput;
+    field.setCustomValidity(error.message);
+    field.reportValidity();
     return;
   }
   nameInput.setCustomValidity('');
+  costInput.setCustomValidity('');
+  damageInput.setCustomValidity('');
   if (download.getAttribute('aria-busy') === 'true') return;
   const mode = document.querySelector('input[name=mode]:checked').value;
   download.setAttribute('aria-busy', 'true');
@@ -47,7 +55,7 @@ download.addEventListener('click', async () => {
     const response = await fetch(templateUrls[mode]);
     if (!response.ok) throw new Error('テンプレートの取得に失敗しました。');
     const zip = await JSZip.loadAsync(await response.arrayBuffer());
-    const result = await Sts2Generator.personalizeArchive(zip, name, mode);
+    const result = await Sts2Generator.personalizeArchive(zip, name, mode, attack);
     const blob = await zip.generateAsync({type: 'blob', compression: 'DEFLATE'});
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -68,6 +76,12 @@ nameInput.addEventListener('input', (event) => {
   event.target.setCustomValidity('');
   updatePreview();
 });
+for (const field of [costInput, damageInput]) {
+  field.addEventListener('input', () => {
+    field.setCustomValidity('');
+    updatePreview();
+  });
+}
 updatePreview();
 
 // Engraved tower and orbital rings, drawn in the header's native palette.
